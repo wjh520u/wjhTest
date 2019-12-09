@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration scan="true" scanPeriod="60 seconds" debug="false">
+    <!--application.yml 传递参数，不能使用logback 自带的<property>标签 -->
+    <springProperty scope="context" name="appname" source="spring.application.name"/>
+    <springProperty scope="context" name="logdir" source="logging.path"/>
+    <conversionRule conversionWord="clr" converterClass="org.springframework.boot.logging.logback.ColorConverter" />
+    <conversionRule conversionWord="wex" converterClass="org.springframework.boot.logging.logback.WhitespaceThrowableProxyConverter" />
+    <conversionRule conversionWord="wEx" converterClass="org.springframework.boot.logging.logback.ExtendedWhitespaceThrowableProxyConverter" />
+
+    <property name="CONSOLE_LOG_PATTERN"
+              value="[${CONSOLE_LOG_PATTERN:-%clr(%d{yyyy-MM-dd HH:mm:ss.SSS}){faint}] [%clr(${LOG_LEVEL_PATTERN:-%5p})] [%clr(%X{traceId}){red}] %clr([%15.15t]){faint} [%clr(%-40.40logger{39}){cyan}] %clr(:){faint} %m%n${LOG_EXCEPTION_CONVERSION_WORD:-%wEx}}"/>
+    <property name="FILE_LOG_PATTERN"
+              value="[${FILE_LOG_PATTERN:-%clr(%d{yyyy-MM-dd HH:mm:ss.SSS}){faint}] [%clr(${LOG_LEVEL_PATTERN:-%5p})] [%clr(%X{traceId}){red}] %clr([%15.15t]){faint} [%clr(%-40.40logger{39}){cyan}] %clr(:){faint} %m%n${LOG_EXCEPTION_CONVERSION_WORD:-%wEx}}"/>
+
+
+    <contextName>${appname}</contextName>
+
+    <!--输出到控制台 ConsoleAppender-->
+    <appender name="consoleLog" class="ch.qos.logback.core.ConsoleAppender">
+        <!--展示格式 layout-->
+        <layout class="ch.qos.logback.classic.PatternLayout">
+            <pattern>
+                <pattern>${CONSOLE_LOG_PATTERN}</pattern>
+            </pattern>
+        </layout>
+        <!--
+        <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+             <level>ERROR</level>
+        </filter>
+         -->
+    </appender>
+
+    <appender name="fileInfoLog" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <!--日志名称，如果没有File 属性，那么只会使用FileNamePattern的文件路径规则
+            如果同时有<File>和<FileNamePattern>，那么当天日志是<File>，明天会自动把今天
+            的日志改名为今天的日期。即，<File> 的日志都是当天的。
+        -->
+        <File>${logdir}/info.${appname}.log</File>
+        <!--滚动策略，按照时间滚动 TimeBasedRollingPolicy-->
+        <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+            <!--文件路径,定义了日志的切分方式——把每一天的日志归档到一个文件中,以防止日志填满整个磁盘空间-->
+            <FileNamePattern>${logdir}/info.${appname}.%d{yyyy-MM-dd}-%i.log.zip</FileNamePattern>
+            <!--只保留最近90天的日志-->
+            <maxHistory>90</maxHistory>
+            <!--日志大小超过200MB，打包成zip-->
+            <maxFileSize>200MB</maxFileSize>
+            <!--用来指定日志文件的上限大小，那么到了这个值，就会删除旧的日志-->
+            <!--<totalSizeCap>1GB</totalSizeCap>-->
+        </rollingPolicy>
+        <!--日志输出编码格式化-->
+        <encoder>
+            <charset>UTF-8</charset>
+            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} %line - %msg%n</pattern>
+        </encoder>
+    </appender>
+
+
+    <!-- 测试环境+开发环境. 多个使用逗号隔开. -->
+    <springProfile name="test,uat,dev,sit">
+        <logger name="com.foxconn" level="DEBUG" additivity="false">
+            <appender-ref ref="consoleLog"/>
+            <appender-ref ref="fileInfoLog"/>
+        </logger>
+
+    </springProfile>
+
+    <!-- 生产环境. -->
+    <springProfile name="prod">
+        <logger name="com.foxconn" level="INFO" additivity="false">
+            <appender-ref ref="fileInfoLog"/>
+            <appender-ref ref="consoleLog"/>
+        </logger>
+    </springProfile>
+
+    <!--指定最基础的日志输出级别-->
+    <root level="INFO">
+        <!--appender将会添加到这个loger-->
+        <appender-ref ref="fileInfoLog"/>
+        <appender-ref ref="consoleLog"/>
+    </root>
+</configuration>

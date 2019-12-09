@@ -1,0 +1,54 @@
+# 端口配置
+server:
+  port: 8080
+
+# Spring配置
+spring:
+  datasource:
+    url: jdbc:mysql://47.96.176.37:3306/test?serverTimezone=UTC&characterEncoding=utf-8&useSSL=false
+    username: root
+    password: wjh520
+    driver-class-name: com.mysql.jdbc.Driver
+    type: com.alibaba.druid.pool.DruidDataSource
+    druid:
+      max-active: 150
+      initial-size: 10
+      max-wait: 60000
+      min-idle: 5
+      time-between-eviction-runs-millis: 60000
+      min-evictable-idle-time-millis: 30000
+      validation-query: select 'x'
+      test-while-idle: true
+      test-on-borrow: true
+      test-on-return: false
+      pool-prepared-statements: false
+      max-open-prepared-statements: -1
+      filters: stat
+      web-stat-filter:
+        enabled: true
+        exclusions: /druid/*
+      stat-view-servlet:
+        enabled: true
+        login-username: admin
+        login-password: admin
+  rabbitmq:
+    host: 47.96.176.37
+    port: 5672
+    username: root
+    password: wjh520
+    listener:
+      simple:
+        acknowledge-mode: manual
+        default-requeue-rejected: false
+        retry:
+          enabled: true
+          max-attempts: 1
+          initial-interval: 60000ms
+          max-interval: 60000ms
+    publisher-confirms: true
+    publisher-returns: true
+    connection-timeout: 10000
+
+dingTtalk:
+  #钉钉MQ异常消息管理群通知URL
+  MQInvalidGroupSendUrl: https://oapi.dingtalk.com/robot/send?access_token=c6ceec3e9a6a4a7691dd4858c821811bfa02a8f361fc0c50e26a950baa392bf6

@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>MQ失效消息管理系统</title>
+    <meta name="renderer" content="webkit">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <link rel="stylesheet" href="/view/layui/css/layui.css"  media="all">
+    <script src="/view/layui/layui.js" charset="utf-8"></script>
+    <script src="/view/js/common.js" charset="utf-8"></script>
+    <!-- 注意：如果你直接复制所有代码到本地，上述css路径需要改成你本地的 -->
+</head>
+<body>
+
+<div class="searchTable">
+     项目来源：
+    <div class="layui-inline">
+        <input class="layui-input" name="source" id="source" autocomplete="off">
+    </div>
+    队列名：
+    <div class="layui-inline">
+        <select class="layui-select" lay-verify="" name="queueName"  id="queueName">
+            <option value="">请选择</option>
+        </select>
+    </div>
+    <!--<div class="layui-inline">
+        <input class="layui-input" name="queueName" id="queueName" autocomplete="off">
+    </div>-->
+    <button id="reload" class="layui-btn" data-type="reload">搜索</button>
+</div>
+
+<table class="layui-hide" id="invalidQueueTable" lay-filter="invalidQueueTable"></table>
+
+<script>
+    var table;
+    var table1;
+    layui.use('table', function(){
+      table = layui.table;
+      var $ = layui.$;
+      table1 = table.render({
+        elem: '#invalidQueueTable'
+        ,url:'/invalidQueue/list'
+        ,cellMinWidth: 80 //全局定义常规单元格的最小宽度，layui 2.2.1 新增
+        ,page: true
+        ,parseData: function(res){ //res 即为原始返回的数据
+            return res.data;
+        }
+        ,cols: [[
+          {title: '编号',width: 70, templet:'#increment'}
+          ,{field:'queueName', title: '队列名'}
+          ,{field:'exchange', title: '交换机'}
+          ,{field:'queueRoutingKey', title: '路由键'}
+          ,{field:'queueMessage', title: '消息内容'}
+          ,{field:'source',width: 80, title: '项目来源'}
+          ,{field:'experience', width: 120, title: '操作', toolbar: '#barDemo'}
+        ]]
+      });
+
+      var $ = layui.$, active = {
+        reload: function(){
+            reload();
+        }
+      };
+
+      $('.searchTable .layui-btn').on('click', function(){
+        var type = $(this).data('type');
+        active[type] ? active[type].call(this) : '';
+      });
+      //监听工具条
+      table.on('tool(invalidQueueTable)', function(obj){
+        var data = obj.data;
+        if(obj.event === 'invalid'){
+          layer.confirm('真的要失效么', offset, function(index){
+                invalidRecord(obj.data.id, obj);
+                layer.close(index);
+          });
+        } else if(obj.event === 'requeue'){
+            layer.confirm('真的要重发么', offset, function(index){
+                rebackQueueById(obj.data.id);
+                layer.close(index);
+             });
+        }
+      });
+
+      queueNameSelectReload();
+    });
+
+    function reload(){
+        //执行重载
+        table.reload('invalidQueueTable', {
+        where: {
+            source: layui.$('#source').val(),
+            queueName: layui.$('#queueName').val()
+        }
+        }, 'data');
+    }
+
+    function queueNameSelectReload(){
+        layui.$.ajax({
+            type: "GET",
+            url: "/invalidQueue/getQueueNames",
+            data: null,
+            dataType: "json",
+            success: function(data){
+                if(data.code == 0){
+                    var text = '<option value = "">' + '请选择'+ '</option>';
+                    layui.$.each(data.data,function(index,value){
+                        layui.$("#queueName").html('');
+                        text += '<option value = "' + value + '">' + value+ '</option>';
+                    });
+                    layui.$("#queueName").append(text);
+                }
+            }
+        });
+    }
+
+    function invalidRecord(id, obj){
+        layui.$.ajax({
+            type: "GET",
+            url: "/invalidQueue/invalidRecord",
+            data: {id:id},
+            dataType: "json",
+            success: function(data){
+                if(data.code == 0){
+                    table1.reload();
+                }
+                layer.alert(data.msg,offset)
+            }
+        });
+    }
+
+    function rebackQueueById(id, obj){
+        layui.$.ajax({
+            type: "GET",
+            url: "/invalidQueue/rebackQueueById",
+            data: {id:id},
+            dataType: "json",
+            success: function(data){
+                if(data.code == 0)
+                {
+                    table1.reload();
+                }
+                layer.alert(data.msg,offset)
+            }
+        });
+    }
+
+</script>
+
+<script type="text/html" id="increment">
+    {{d.LAY_TABLE_INDEX+1}}
+</script>
+
+<script type="text/html" id="barDemo">
+    <a class="layui-btn layui-btn-xs" lay-event="invalid">失效</a>
+    <a class="layui-btn layui-btn-danger layui-btn-xs" lay-event="requeue">重发</a>
+</script>
+
+</body>
+</html>

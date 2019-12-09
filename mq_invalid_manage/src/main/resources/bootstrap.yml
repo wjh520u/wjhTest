@@ -1,0 +1,6 @@
+spring:
+  application:
+    name: mq_invalid_manage
+logging:
+  path: logs/
+  file: logs/${spring.application.name}.log

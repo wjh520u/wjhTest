@@ -1,0 +1,9 @@
+# 默认的profile为dev，如需其它环境通过指定启动参数使用不同的profile，比如：
+# 测试环境：java -jar my-spring-boot.jar --spring.profiles.active=dev
+# 生产环境：java -jar my-spring-boot.jar --spring.profiles.active=prod
+
+spring:
+  profiles:
+    active: @profileActive@
+  application:
+    name: mq_invalid_manage
